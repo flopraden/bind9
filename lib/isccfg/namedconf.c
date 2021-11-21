@@ -2343,12 +2343,15 @@ static cfg_clausedef_t zone_only_clauses[] = {
 	  CFG_ZONE_PRIMARY | CFG_ZONE_SECONDARY | CFG_ZONE_MIRROR },
 	{ "masters", &cfg_type_namesockaddrkeylist,
 	  CFG_ZONE_SECONDARY | CFG_ZONE_MIRROR | CFG_ZONE_STUB |
-		  CFG_ZONE_REDIRECT },
+      CFG_ZONE_REDIRECT },
 	{ "parental-agents", &cfg_type_namesockaddrkeylist,
 	  CFG_ZONE_PRIMARY | CFG_ZONE_SECONDARY },
 	{ "primaries", &cfg_type_namesockaddrkeylist,
 	  CFG_ZONE_SECONDARY | CFG_ZONE_MIRROR | CFG_ZONE_STUB |
 		  CFG_ZONE_REDIRECT },
+	{ "update-primaries", &cfg_type_namesockaddrkeylist,
+	  CFG_ZONE_SECONDARY | CFG_ZONE_MIRROR | CFG_ZONE_STUB |
+      CFG_ZONE_REDIRECT },
 	{ "pubkey", &cfg_type_pubkey, CFG_CLAUSEFLAG_ANCIENT },
 	{ "server-addresses", &cfg_type_bracketed_netaddrlist,
 	  CFG_ZONE_STATICSTUB },
