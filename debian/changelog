@@ -1,3 +1,10 @@
+bind9 (1:9.16.23-1) unstable; urgency=high
+
+  * New upstream version 9.16.23-4f4d5302c255c2426f09dcdbdf44cecfa94eb96e
+  * Add patches to implement update-primaries
+
+ -- Praden Florian <florian@praden.eu>  Sun, 21 Nov 2021 14:01:52 +0100
+
 bind9 (1:9.16.15-1) unstable; urgency=high
 
   * New upstream version 9.16.15 (Closes: #987741, #987742, #987743)
