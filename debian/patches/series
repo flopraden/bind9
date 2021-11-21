@@ -1,13 +1,5 @@
 0001-Add_--install-layout=deb_to_setup.py_call.patch
 0002-python-fix-for-dist-packages.patch
 0003-Add-patch-to-fix-sphinx-build-failure-on-Ubuntu-Xeni.patch
-0004-Reduce-nsec3-max-iterations-to-150.patch
-0005-Check-dnssec-policy-nsec3param-iterations-limit.patch
-0006-Warn-if-there-is-excessive-NSEC3-iterations.patch
-0007-nsupdate-reject-attempts-to-add-NSEC3PARAM-with-exce.patch
-0008-Check-that-named-rejects-excessive-iterations-via-UP.patch
-0009-Check-NSEC3-iterations-with-dnssec-signzone.patch
-0010-Check-that-excessive-iterations-in-logged-by-named-w.patch
-0011-dnssec-policy-reduce-NSEC3-iterations-to-150.patch
-0012-Mark-DNSSEC-responses-with-NSEC3-records-that-exceed.patch
-0013-Check-insecure-responses-returned-with-too-many-NSEC.patch
+0004-Check-dnssec-policy-nsec3param-iterations-limit.patch
+0005-Warn-if-there-is-excessive-NSEC3-iterations.patch
