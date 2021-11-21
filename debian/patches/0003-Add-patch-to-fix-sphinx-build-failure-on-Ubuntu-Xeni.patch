@@ -1,0 +1,21 @@
+From: =?utf-8?b?T25kxZllaiBTdXLDvQ==?= <ondrej@debian.org>
+Date: Thu, 18 Feb 2021 12:25:24 +0100
+Subject: Add patch to fix sphinx-build failure on Ubuntu Xenial
+
+---
+ doc/arm/logging-categories.rst | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/doc/arm/logging-categories.rst b/doc/arm/logging-categories.rst
+index 12aac73..b159f15 100644
+--- a/doc/arm/logging-categories.rst
++++ b/doc/arm/logging-categories.rst
+@@ -8,6 +8,8 @@
+    See the COPYRIGHT file distributed with this work for additional
+    information regarding copyright ownership.
+ 
++:orphan:
++
+ ``client``
+     Processing of client requests.
+ 

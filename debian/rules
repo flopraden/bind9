@@ -1,0 +1,104 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+DPKG_EXPORT_BUILDFLAGS = 1
+
+export DEB_CFLAGS_MAINT_APPEND = -fno-strict-aliasing -fno-delete-null-pointer-checks -DNO_VERSION_DATE -DDIG_SIGCHASE
+
+export DPKG_GENSYMBOLS_CHECK_LEVEL := 4
+
+include /usr/share/dpkg/default.mk
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+COMMA = ,
+ifneq (,$(filter parallel=%,$(subst $(COMMA), ,$(DEB_BUILD_OPTIONS))))
+  NJOBS := -j $(subst parallel=,,$(filter parallel=%,$(subst $(COMMA), ,$(DEB_BUILD_OPTIONS))))
+endif
+
+export arch = $(DEB_HOST_ARCH)
+
+ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
+EXTRA_FEATURES=--disable-linux-caps
+endif
+
+SED_VERSION_EXTENSIONS := \
+	sed -e 's,^EXTENSIONS=,EXTENSIONS="$$(dpkg-parsechangelog --file=../debian/changelog | sed -n '/^Version/s/[^-]*//p')-$$(dpkg-vendor --query Vendor)",'
+
+%:
+	dh $@ --with python3
+
+prepare_version_extensions:
+	if [ ! -f version.bak ]; then \
+	  mv version version.bak; \
+	  $(SED_VERSION_EXTENSIONS) < version.bak > version; \
+	fi
+
+clean_version_extensions:
+	if [ -f version.bak ]; then \
+	  mv version.bak version; \
+	fi
+
+override_dh_autoreconf: prepare_version_extensions
+	dh_autoreconf
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		--libdir=/usr/lib/$(DEB_HOST_MULTIARCH) \
+		--sysconfdir=/etc/bind \
+		--with-python=python3 \
+		--localstatedir=/ \
+		--enable-threads \
+		--enable-largefile \
+		--with-libtool \
+		--enable-shared \
+		--enable-static \
+		--with-gost=no \
+		--with-openssl=/usr \
+		--with-gssapi=/usr \
+		--with-libidn2 \
+		--with-json-c \
+		--with-lmdb=/usr \
+		--with-gnu-ld \
+		--with-maxminddb \
+		--with-atf=no \
+		--enable-ipv6 \
+		--enable-rrl \
+		--enable-filter-aaaa \
+		--disable-native-pkcs11 \
+		--enable-dnstap \
+		$(EXTRA_FEATURES)
+
+override_dh_auto_build:
+	dh_auto_build -- all doc
+
+override_dh_auto_clean: clean_version_extensions
+	dh_auto_clean
+
+override_dh_auto_install:
+	dh_auto_install --destdir=$(CURDIR)/debian/tmp
+
+override_dh_auto_test:
+	:
+
+override_dh_installinit:
+	dh_installinit -pbind9 --name=named
+	dh_installinit --remaining
+
+override_dh_installsystemd:
+	dh_installsystemd -pbind9 --no-enable --name=named-resolvconf named-resolvconf.service
+	dh_installsystemd -pbind9 --name=named named.service
+	dh_installsystemd --remaining
+
+override_dh_install:
+	dh_install
+	# Install apparmor profile
+	dh_apparmor -pbind9 --profile-name=usr.sbin.named
+
+override_dh_missing:
+	dh_missing --exclude=.la --exclude=lwresd --exclude=__pycache_ --fail-missing
+
+.PHONY: prepare_version_extensions clean_version_extensions
