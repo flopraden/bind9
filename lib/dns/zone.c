@@ -285,6 +285,11 @@ struct dns_zone {
 	unsigned int curmaster;
 	isc_sockaddr_t masteraddr;
 
+  isc_sockaddr_t *updatemasters;
+	isc_dscp_t *updatemasterdscps;
+	dns_name_t **updatemasterkeynames;
+	unsigned int updatemasterscnt;
+
 	isc_sockaddr_t *parentals;
 	isc_dscp_t *parentaldscps;
 	dns_name_t **parentalkeynames;
@@ -6395,6 +6400,82 @@ dns_zone_setprimarieswithkeys(dns_zone_t *zone, const isc_sockaddr_t *masters,
 	zone->masterkeynames = newnames;
 	zone->masterscnt = count;
 	DNS_ZONE_CLRFLAG(zone, DNS_ZONEFLG_NOMASTERS);
+
+unlock:
+	UNLOCK_ZONE(zone);
+	return (result);
+}
+
+isc_result_t
+dns_zone_setupdateprimaries(dns_zone_t *zone,
+          const isc_sockaddr_t *updatemasters, uint32_t count) {
+	isc_result_t result;
+
+	result = dns_zone_setupdateprimarieswithkeys(zone, updatemasters,
+                                               NULL, count);
+	return (result);
+}
+
+isc_result_t
+dns_zone_setupdateprimarieswithkeys(dns_zone_t *zone,
+            const isc_sockaddr_t *updatemasters, dns_name_t **keynames,
+            uint32_t count) {
+	isc_result_t result = ISC_R_SUCCESS;
+	isc_sockaddr_t *newaddrs = NULL;
+	isc_dscp_t *newdscps = NULL;
+	dns_name_t **newnames = NULL;
+
+	REQUIRE(DNS_ZONE_VALID(zone));
+	REQUIRE(count == 0 || updatemasters != NULL);
+	if (keynames != NULL) {
+		REQUIRE(count != 0);
+	}
+
+	LOCK_ZONE(zone);
+	/*
+	 * The refresh code assumes that 'update-primaries' wouldn't change under it.
+	 * If it will change then kill off any current refresh in progress
+	 * and update the primaries info.  If it won't change then we can just
+	 * unlock and exit.
+	 */
+	if (count != zone->updatemasterscnt ||
+	    !same_addrs(zone->updatemasters, updatemasters, count) ||
+	    !same_keynames(zone->updatemasterkeynames, keynames, count))
+	{
+		if (zone->request != NULL) {
+			dns_request_cancel(zone->request);
+		}
+	} else {
+		goto unlock;
+	}
+
+	clear_serverslist(&zone->updatemasters, &zone->updatemasterdscps,
+			  &zone->updatemasterkeynames, &zone->updatemasterscnt, zone->mctx);
+	/*
+	 * If count == 0, don't allocate any space for masters, mastersok or
+	 * keynames so internally, those pointers are NULL if count == 0
+	 */
+	if (count == 0) {
+		goto unlock;
+	}
+
+	/*
+	 * Now set up the updateprimaries and primary key lists
+	 */
+	result = set_serverslist(count, updatemasters, &newaddrs, NULL, &newdscps,
+				 keynames, &newnames, zone->mctx);
+	INSIST(newdscps == NULL);
+	if (result != ISC_R_SUCCESS) {
+		goto unlock;
+	}
+
+	/*
+	 * Everything is ok so attach to the zone.
+	 */
+	zone->updatemasters = newaddrs;
+	zone->updatemasterdscps = newdscps;
+	zone->updatemasterkeynames = newnames;
+	zone->updatemasterscnt = count;
 
 unlock:
 	UNLOCK_ZONE(zone);
@@ -18022,12 +18103,24 @@ sendtomaster(dns_forward_t *forward) {
 		return (ISC_R_CANCELED);
 	}
 
-	if (forward->which >= forward->zone->masterscnt) {
-		UNLOCK_ZONE(forward->zone);
-		return (ISC_R_NOMORE);
-	}
+  if (forward->zone->updatemasterscnt > 0) {
+    // we are using update-primaries instead of primaries
+    if (forward->which >= forward->zone->updatemasterscnt) {
+      UNLOCK_ZONE(forward->zone);
+      return (ISC_R_NOMORE);
+    }
 
-	forward->addr = forward->zone->masters[forward->which];
+    forward->addr = forward->zone->updatemasters[forward->which];    
+  } else{
+    // no update-primaries servers, using primaries
+    if (forward->which >= forward->zone->masterscnt) {
+      UNLOCK_ZONE(forward->zone);
+      return (ISC_R_NOMORE);
+    }
+
+    forward->addr = forward->zone->masters[forward->which];    
+  }
+
 	/*
 	 * Always use TCP regardless of whether the original update
 	 * used TCP.

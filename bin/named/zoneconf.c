@@ -1913,6 +1913,23 @@ named_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
 	case dns_zone_secondary:
 	case dns_zone_stub:
 	case dns_zone_redirect:
+		obj = NULL;
+		(void)cfg_map_get(zoptions, "update-primaries", &obj);
+		if (obj != NULL) {
+			dns_ipkeylist_t ipkl;
+			dns_ipkeylist_init(&ipkl);
+
+			RETERR(named_config_getipandkeylist(config, "update-primaries",
+                                          obj, mctx, &ipkl));
+			result = dns_zone_setupdateprimarieswithkeys(
+                     mayberaw, ipkl.addrs, ipkl.keys, ipkl.count);
+			dns_ipkeylist_clear(mctx, &ipkl);
+			RETERR(result);
+		} else {
+			result = dns_zone_setupdateprimaries(mayberaw, NULL, 0);
+		}
+		RETERR(result);
+
 		count = 0;
 		obj = NULL;
 		(void)cfg_map_get(zoptions, "primaries", &obj);

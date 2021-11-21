@@ -624,12 +624,36 @@ dns_zone_maintenance(dns_zone_t *zone);
 
 isc_result_t
 dns_zone_setprimaries(dns_zone_t *zone, const isc_sockaddr_t *primaries,
-		      uint32_t count);
+                     uint32_t count);
 isc_result_t
 dns_zone_setprimarieswithkeys(dns_zone_t *zone, const isc_sockaddr_t *primaries,
-			      dns_name_t **keynames, uint32_t count);
+                             dns_name_t **keynames, uint32_t count);
 /*%<
  *	Set the list of master servers for the zone.
+ *
+ * Require:
+ *\li	'zone' to be a valid zone.
+ *\li	'primaries' array of isc_sockaddr_t with port set or NULL.
+ *\li	'count' the number of primaries.
+ *\li	'keynames' array of dns_name_t's for tsig keys or NULL.
+ *
+ *\li	If 'primaries' is NULL then 'count' must be zero.
+ *
+ * Returns:
+ *\li	#ISC_R_SUCCESS
+ *\li	#ISC_R_NOMEMORY
+ *\li      Any result dns_name_dup() can return, if keynames!=NULL
+ */
+
+
+isc_result_t
+dns_zone_setupdateprimaries(dns_zone_t *zone, const isc_sockaddr_t *primaries,
+		                       uint32_t count);
+isc_result_t
+dns_zone_setupdateprimarieswithkeys(dns_zone_t *zone,
+        const isc_sockaddr_t *primaries, dns_name_t **keynames, uint32_t count);
+/*%<
+ *	Set the list of update master servers for the zone.
  *
  * Require:
  *\li	'zone' to be a valid zone.

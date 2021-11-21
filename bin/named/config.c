@@ -597,7 +597,9 @@ named_config_getremotesdef(const cfg_obj_t *cctx, const char *list,
 			result = getremotesdef(cctx, "masters", name, ret);
 		}
 		return (result);
-	}
+	} else if (strcmp(list, "update-primaries") == 0) {
+		return (getremotesdef(cctx, list, name, ret));
+  }
 	return (ISC_R_NOTFOUND);
 }
 
