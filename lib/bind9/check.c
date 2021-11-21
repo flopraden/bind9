@@ -2773,6 +2773,31 @@ check_zoneconf(const cfg_obj_t *zconfig, const cfg_obj_t *voptions,
 	}
 
 	/*
+	 * Secondary, mirror, and stub zones may have a "update-primaries" field,
+	 */
+	if (ztype == CFG_ZONE_SECONDARY || ztype == CFG_ZONE_STUB ||
+	    ztype == CFG_ZONE_MIRROR )
+	{
+		obj = NULL;
+		(void)cfg_map_get(zoptions, "update-primaries", &obj);
+		if (obj != NULL) {
+			uint32_t count;
+			tresult = validate_remotes("update-primaries", obj, config,
+						   &count, logctx, mctx);
+			if (tresult != ISC_R_SUCCESS && result == ISC_R_SUCCESS)
+			{
+				result = tresult;
+			}
+			if (tresult == ISC_R_SUCCESS && count == 0) {
+				cfg_obj_log(zoptions, logctx, ISC_LOG_WARNING,
+					    "zone '%s': "
+					    "empty 'update-primaries' entry",
+					    znamestr);
+			}
+		}
+	}
+
+	/*
 	 * Warn if *-source and *-source-v6 options specify a port,
 	 * and fail if they specify the default listener port.
 	 */
